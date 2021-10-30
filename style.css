@@ -26,12 +26,24 @@
     color: white;
   }
 
-  body {
-    padding-top: 60px;
+  @keyframes fadein {
+    0% {opacity: 0;}
+    50% {opacity: 0;}
+    100% {opacity: 1;}
   }
-  @media (max-width: 979px) {
+  body {
+    padding-top: 55px;
+    animation-name: fadein;
+    animation-duration: 0.5s;
+  }
+  @media (max-width: 604px) {
     body {
-      padding-top: 120px;
+      padding-top: 95px;
+    }
+  }
+  @media (max-width: 372px) {
+    body {
+      padding-top: 135px;
     }
   }
 
