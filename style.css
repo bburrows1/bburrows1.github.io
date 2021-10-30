@@ -38,3 +38,8 @@
   html {
       scroll-behavior: smooth;
   }
+
+  .row-content {
+    margin:auto; 
+    max-width: 1564px;
+  }
