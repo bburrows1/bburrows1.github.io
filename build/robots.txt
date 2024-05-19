@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://www.diggers4u.co.uk/sitemap.xml
