@@ -26,6 +26,11 @@ function esc(value: string): string {
     });
 }
 
+function getMessageIdDomain(fromAddress: string): string {
+    const domain = fromAddress.split("@")[1]?.trim().toLowerCase();
+    return domain || "workers.dev";
+}
+
 function getSuccessUrl(request: Request, env: Env): URL {
     if (env.CONTACT_SUCCESS_URL) {
         try {
@@ -82,6 +87,8 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
 
     const cleanSubject = subject.replace(/[\r\n]+/g, " ").slice(0, 150);
     const cleanEmail = email.replace(/[\r\n]+/g, " ");
+    const messageId = `<${crypto.randomUUID()}@${getMessageIdDomain(contactFrom)}>`;
+    const sentDate = new Date().toUTCString();
 
     const textBody = `New website enquiry\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nSubject: ${subject}\n\nComment:\n${comment}\n`;
     const htmlBody = `
@@ -97,7 +104,10 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     const rawEmail =
         [
             "MIME-Version: 1.0",
+            `Date: ${sentDate}`,
+            `Message-ID: ${messageId}`,
             `From: Website Contact <${contactFrom}>`,
+            `To: ${contactTo}`,
             `Reply-To: ${cleanEmail}`,
             `Subject: Website enquiry: ${cleanSubject}`,
             `Content-Type: multipart/alternative; boundary=\"${boundary}\"`,
