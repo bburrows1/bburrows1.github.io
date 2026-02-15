@@ -42,6 +42,13 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     const contactFrom = sanitize(env.CONTACT_FROM);
     const contactTo = sanitize(env.CONTACT_TO);
 
+    console.log("contact request", {
+        method: request.method,
+        url: request.url,
+        contactFrom,
+        contactTo
+    });
+
     if (!contactFrom || !contactTo) {
         return new Response("Email configuration missing", { status: 500 });
     }
@@ -59,6 +66,15 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     const phone = sanitize(formData.get("Phone Number"));
     const subject = sanitize(formData.get("Subject"));
     const comment = sanitize(formData.get("Comment"));
+
+    console.log("contact form payload", {
+        Name: name,
+        Email: email,
+        "Phone Number": phone,
+        Subject: subject,
+        Comment: comment,
+        Company: company
+    });
 
     if (!name || !email || !phone || !subject || !comment) {
         return new Response("Missing required fields", { status: 400 });
@@ -99,7 +115,12 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
         ].join("\r\n");
 
     const message = new EmailMessage(contactFrom, contactTo, rawEmail);
-    await env.CONTACT_EMAIL.send(message);
+    try {
+        await env.CONTACT_EMAIL.send(message);
+    } catch (error) {
+        console.error("send_email failed", error);
+        return new Response(`send_email failed: ${String(error)}`, { status: 500 });
+    }
 
     return Response.redirect(getSuccessUrl(request, env), 303);
 }
