@@ -60,3 +60,21 @@ CONTACT_SUCCESS_URL=https://yourdomain.com/?contact=sent
 ```
 
 You can start from `workers/contact/.dev.vars.example`.
+
+## Dev Container (No Local Node Install)
+
+This repo includes a VS Code dev container with Node + Wrangler preinstalled in Docker:
+
+- `.devcontainer/devcontainer.json`
+- `.devcontainer/Dockerfile`
+
+How to use:
+
+1. Install Docker Desktop.
+2. Install VS Code extension: `Dev Containers` (`ms-vscode-remote.remote-containers`).
+3. Open this repo in VS Code.
+4. Run `Dev Containers: Reopen in Container`.
+5. Run Worker commands in the integrated terminal:
+   - `npx wrangler deploy --cwd workers/contact`
+   - `npx wrangler secret put CONTACT_TO --cwd workers/contact`
+   - `npx wrangler tail diggers4u-worker --format pretty`

@@ -1,0 +1,15 @@
+{
+    "name": "diggers4u-dev",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "esbenp.prettier-vscode",
+                "dbaeumer.vscode-eslint"
+            ]
+        }
+    },
+    "postCreateCommand": "node -v && npm -v && wrangler --version"
+}
