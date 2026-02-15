@@ -9,8 +9,79 @@ interface Env {
     CONTACT_SUCCESS_URL?: string;
 }
 
+const MAX_NAME_LENGTH = 120;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_PHONE_LENGTH = 40;
+const MAX_SUBJECT_LENGTH = 150;
+const MAX_COMMENT_LENGTH = 4000;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function sanitize(value: FormDataEntryValue | null): string {
     return String(value ?? "").trim();
+}
+
+function textResponse(message: string, status: number, headers: HeadersInit = {}): Response {
+    return new Response(message, {
+        status,
+        headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "text/plain; charset=UTF-8",
+            "X-Content-Type-Options": "nosniff",
+            ...headers,
+        },
+    });
+}
+
+function noContentResponse(status = 204): Response {
+    return new Response(null, {
+        status,
+        headers: {
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    });
+}
+
+function redirectSeeOther(url: URL): Response {
+    return new Response(null, {
+        status: 303,
+        headers: {
+            "Cache-Control": "no-store",
+            Location: url.toString(),
+            "X-Content-Type-Options": "nosniff",
+        },
+    });
+}
+
+function parseUrl(value: string | null): URL | null {
+    if (!value) return null;
+    try {
+        return new URL(value);
+    } catch {
+        return null;
+    }
+}
+
+function isTrustedOrigin(request: Request): boolean {
+    const requestUrl = new URL(request.url);
+    const origin = parseUrl(request.headers.get("Origin"));
+    if (origin) {
+        return origin.protocol === requestUrl.protocol && origin.host === requestUrl.host;
+    }
+
+    const referer = parseUrl(request.headers.get("Referer"));
+    if (!referer) {
+        // Allow clients that do not send Origin/Referer.
+        return true;
+    }
+
+    return referer.protocol === requestUrl.protocol && referer.host === requestUrl.host;
+}
+
+function isSupportedFormContentType(contentType: string | null): boolean {
+    if (!contentType) return false;
+    const normalized = contentType.toLowerCase();
+    return normalized.includes("application/x-www-form-urlencoded") || normalized.includes("multipart/form-data");
 }
 
 function esc(value: string): string {
@@ -31,6 +102,33 @@ function getMessageIdDomain(fromAddress: string): string {
     return domain || "workers.dev";
 }
 
+function isValidEmailAddress(value: string): boolean {
+    return value.length <= MAX_EMAIL_LENGTH && EMAIL_PATTERN.test(value);
+}
+
+function sanitizeSingleLine(value: FormDataEntryValue | null, maxLength: number): string {
+    return sanitize(value)
+        .replace(/[\r\n\t]+/g, " ")
+        .replace(/\s+/g, " ")
+        .slice(0, maxLength)
+        .trim();
+}
+
+function sanitizeMultiline(value: FormDataEntryValue | null, maxLength: number): string {
+    return sanitize(value)
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .replace(/[^\S\n]+/g, " ")
+        .slice(0, maxLength)
+        .trim();
+}
+
+function looksLikePhoneNumber(value: string): boolean {
+    if (value.length > MAX_PHONE_LENGTH) return false;
+    const digits = value.replace(/\D/g, "");
+    return digits.length >= 7 && digits.length <= 15;
+}
+
 function getSuccessUrl(request: Request, env: Env): URL {
     if (env.CONTACT_SUCCESS_URL) {
         try {
@@ -47,29 +145,50 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     const contactFrom = sanitize(env.CONTACT_FROM);
     const contactTo = sanitize(env.CONTACT_TO);
 
-    if (!contactFrom || !contactTo) {
-        return new Response("Email configuration missing", { status: 500 });
+    if (!contactFrom || !contactTo || !isValidEmailAddress(contactFrom) || !isValidEmailAddress(contactTo)) {
+        return textResponse("Email configuration missing", 500);
     }
 
-    const formData = await request.formData();
+    if (!isTrustedOrigin(request)) {
+        return textResponse("Forbidden", 403);
+    }
+
+    if (!isSupportedFormContentType(request.headers.get("Content-Type"))) {
+        return textResponse("Unsupported content type", 415);
+    }
+
+    let formData: FormData;
+    try {
+        formData = await request.formData();
+    } catch {
+        return textResponse("Invalid form payload", 400);
+    }
 
     // Honeypot field to reduce bot submissions.
-    const company = sanitize(formData.get("Company"));
+    const company = sanitizeSingleLine(formData.get("Company"), 100);
     if (company) {
-        return new Response("OK", { status: 200 });
+        return noContentResponse();
     }
 
-    const name = sanitize(formData.get("Name"));
-    const email = sanitize(formData.get("Email"));
-    const phone = sanitize(formData.get("Phone Number"));
-    const subject = sanitize(formData.get("Subject"));
-    const comment = sanitize(formData.get("Comment"));
+    const name = sanitizeSingleLine(formData.get("Name"), MAX_NAME_LENGTH);
+    const email = sanitizeSingleLine(formData.get("Email"), MAX_EMAIL_LENGTH);
+    const phone = sanitizeSingleLine(formData.get("Phone Number"), MAX_PHONE_LENGTH);
+    const subject = sanitizeSingleLine(formData.get("Subject"), MAX_SUBJECT_LENGTH);
+    const comment = sanitizeMultiline(formData.get("Comment"), MAX_COMMENT_LENGTH);
 
     if (!name || !email || !phone || !subject || !comment) {
-        return new Response("Missing required fields", { status: 400 });
+        return textResponse("Missing required fields", 400);
     }
 
-    const cleanSubject = subject.replace(/[\r\n]+/g, " ").slice(0, 150);
+    if (!isValidEmailAddress(email)) {
+        return textResponse("Invalid email address", 400);
+    }
+
+    if (!looksLikePhoneNumber(phone)) {
+        return textResponse("Invalid phone number", 400);
+    }
+
+    const cleanSubject = subject.replace(/[\r\n]+/g, " ").slice(0, MAX_SUBJECT_LENGTH);
     const cleanEmail = email.replace(/[\r\n]+/g, " ");
     const messageId = `<${crypto.randomUUID()}@${getMessageIdDomain(contactFrom)}>`;
     const sentDate = new Date().toUTCString();
@@ -112,20 +231,17 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
         await env.CONTACT_EMAIL.send(message);
     } catch (error) {
         console.error("send_email failed", error);
-        return new Response(`send_email failed: ${String(error)}`, { status: 500 });
+        return textResponse("Unable to send message right now", 502);
     }
 
-    return Response.redirect(getSuccessUrl(request, env), 303);
+    return redirectSeeOther(getSuccessUrl(request, env));
 }
 
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         if (request.method !== "POST") {
-            return new Response("Method not allowed", {
-                status: 405,
-                headers: {
-                    Allow: "POST",
-                },
+            return textResponse("Method not allowed", 405, {
+                Allow: "POST",
             });
         }
 
