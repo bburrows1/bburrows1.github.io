@@ -1,35 +1,59 @@
-# Cloudflare Deployment
+# Cloudflare Monorepo
 
-This repository supports both:
+This repository is structured as a Cloudflare monorepo with one Pages app and one Worker:
 
-- A static Cloudflare Pages site from the repository root.
-- A separate Cloudflare Worker for contact form email in `workers/contact`.
+- `pages/diggers4u`: static Cloudflare Pages site
+- `workers/diggers4u-contact`: contact form Worker (`/api/contact`)
 
-## Pages deploy (static site)
+## Repository layout
+
+```text
+pages/
+  diggers4u/
+    wrangler.toml
+    index.html
+    404.html
+    _headers
+    style.css
+    robots.txt
+    sitemap.xml
+    resources/
+workers/
+  diggers4u-contact/
+    wrangler.toml
+    src/index.ts
+```
+
+## Pages deploy (`pages/diggers4u`)
 
 Use these settings when creating the Pages project:
 
 - Framework preset: `None`
 - Build command: *(leave empty)*
 - Build output directory: `.`
-- Root directory: *(leave empty, so repository root is used)*
+- Root directory: `pages/diggers4u`
+
+Or deploy with Wrangler from the site folder:
+
+```bash
+npx wrangler pages deploy pages/diggers4u
+```
 
 Notes:
 
-- Root `wrangler.toml` is Pages-only (`pages_build_output_dir = "."`).
-- `_headers` adds security headers and cache rules for static assets.
-- `robots.txt` and `sitemap.xml` are served from the site root.
-- `404.html` redirects unknown routes to `/`.
+- `pages/diggers4u/wrangler.toml` is Pages-only (`pages_build_output_dir = "."`).
+- `pages/diggers4u/_headers` adds security headers and cache rules for static assets.
+- `pages/diggers4u/robots.txt` and `pages/diggers4u/sitemap.xml` are served from the site root.
+- `pages/diggers4u/404.html` redirects unknown routes to `/`.
 
-## Worker deploy (contact form API)
+## Worker deploy (`workers/diggers4u-contact`)
 
-The Worker code is in `workers/contact/src/index.ts`, with config in `workers/contact/wrangler.toml`.
+Worker code is in `workers/diggers4u-contact/src/index.ts` with config in `workers/diggers4u-contact/wrangler.toml`.
 
-Deploy the Worker from that folder:
+Deploy:
 
 ```bash
-cd workers/contact
-npx wrangler deploy
+npx wrangler deploy --cwd workers/diggers4u-contact
 ```
 
 Set Worker environment variables (Dashboard or CLI):
@@ -41,40 +65,10 @@ Set Worker environment variables (Dashboard or CLI):
 `send_email` binding:
 
 - Binding name: `CONTACT_EMAIL`
-- Configured in `workers/contact/wrangler.toml` (not in root Pages config)
+- Configured in `workers/diggers4u-contact/wrangler.toml`
 
 ## Routing
 
-The form in `index.html` posts to `/api/contact`.
-Map that path to the Worker with a Worker Route on your zone (for example `yourdomain.com/api/contact`).
-This keeps the form action same-origin while static pages continue to be served by Pages.
+`pages/diggers4u/index.html` posts to `/api/contact`.
 
-## Local Worker dev
-
-Create `workers/contact/.dev.vars` (ignored by git):
-
-```env
-CONTACT_FROM=no-reply@yourdomain.com
-CONTACT_TO=you@yourdomain.com
-CONTACT_SUCCESS_URL=https://yourdomain.com/?contact=sent
-```
-
-You can start from `workers/contact/.dev.vars.example`.
-
-## Dev Container (No Local Node Install)
-
-This repo includes a VS Code dev container with Node + Wrangler preinstalled in Docker:
-
-- `.devcontainer/devcontainer.json`
-- `.devcontainer/Dockerfile`
-
-How to use:
-
-1. Install Docker Desktop.
-2. Install VS Code extension: `Dev Containers` (`ms-vscode-remote.remote-containers`).
-3. Open this repo in VS Code.
-4. Run `Dev Containers: Reopen in Container`.
-5. Run Worker commands in the integrated terminal:
-   - `npx wrangler deploy --cwd workers/contact`
-   - `npx wrangler secret put CONTACT_TO --cwd workers/contact`
-   - `npx wrangler tail diggers4u-worker --format pretty`
+Map `yourdomain.com/api/contact` to the contact Worker route so Pages serves static content and the Worker handles form submissions.
