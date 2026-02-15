@@ -22,6 +22,9 @@ workers/
   diggers4u-contact/
     wrangler.toml
     src/index.ts
+scripts/
+  release.sh
+Makefile
 ```
 
 ## Pages deploy (`pages/diggers4u`)
@@ -29,7 +32,7 @@ workers/
 Use these settings when creating the Pages project:
 
 - Framework preset: `None`
-- Build command: *(leave empty)*
+- Build command: _(leave empty)_
 - Build output directory: `.`
 - Root directory: `pages/diggers4u`
 
@@ -72,3 +75,17 @@ Set Worker environment variables (Dashboard or CLI):
 `pages/diggers4u/index.html` posts to `/api/contact`.
 
 Map `yourdomain.com/api/contact` to the contact Worker route so Pages serves static content and the Worker handles form submissions.
+
+## One-command release
+
+Run:
+
+```bash
+make release
+```
+
+This command:
+
+- Deploys Pages from `pages/diggers4u`
+- Deploys Worker from `workers/diggers4u-contact`
+- Uses `workers/diggers4u-contact/wrangler.local.toml` if present, otherwise falls back to `workers/diggers4u-contact/wrangler.toml`
