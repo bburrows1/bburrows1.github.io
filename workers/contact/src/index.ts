@@ -129,6 +129,11 @@ function looksLikePhoneNumber(value: string): boolean {
     return digits.length >= 7 && digits.length <= 15;
 }
 
+function formatReplyToHeader(name: string, email: string): string {
+    const safeName = name.replace(/["\\]/g, "\\$&");
+    return `"${safeName}" <${email}>`;
+}
+
 function getSuccessUrl(request: Request, env: Env): URL {
     if (env.CONTACT_SUCCESS_URL) {
         try {
@@ -189,7 +194,9 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     }
 
     const cleanSubject = subject.replace(/[\r\n]+/g, " ").slice(0, MAX_SUBJECT_LENGTH);
+    const subjectWithName = `Website enquiry: ${cleanSubject} - ${name}`.slice(0, MAX_SUBJECT_LENGTH);
     const cleanEmail = email.replace(/[\r\n]+/g, " ");
+    const replyTo = formatReplyToHeader(name, cleanEmail);
     const messageId = `<${crypto.randomUUID()}@${getMessageIdDomain(contactFrom)}>`;
     const sentDate = new Date().toUTCString();
 
@@ -210,8 +217,8 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
         `Message-ID: ${messageId}`,
         `From: Diggers4U Enquiries <${contactFrom}>`,
         `To: ${contactTo}`,
-        `Reply-To: ${cleanEmail}`,
-        `Subject: Website enquiry: ${cleanSubject}`,
+        `Reply-To: ${replyTo}`,
+        `Subject: ${subjectWithName}`,
         `Content-Type: multipart/alternative; boundary=\"${boundary}\"`,
         "",
         `--${boundary}`,
