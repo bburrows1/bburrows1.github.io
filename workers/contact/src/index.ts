@@ -20,7 +20,7 @@ function esc(value: string): string {
             "<": "&lt;",
             ">": "&gt;",
             '"': "&quot;",
-            "'": "&#39;"
+            "'": "&#39;",
         };
         return entities[ch] ?? ch;
     });
@@ -51,7 +51,7 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
         method: request.method,
         url: request.url,
         contactFrom,
-        contactTo
+        contactTo,
     });
 
     if (!contactFrom || !contactTo) {
@@ -78,7 +78,7 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
         "Phone Number": phone,
         Subject: subject,
         Comment: comment,
-        Company: company
+        Company: company,
     });
 
     if (!name || !email || !phone || !subject || !comment) {
@@ -101,28 +101,27 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     `;
 
     const boundary = "cf-boundary-" + crypto.randomUUID();
-    const rawEmail =
-        [
-            "MIME-Version: 1.0",
-            `Date: ${sentDate}`,
-            `Message-ID: ${messageId}`,
-            `From: Website Contact <${contactFrom}>`,
-            `To: ${contactTo}`,
-            `Reply-To: ${cleanEmail}`,
-            `Subject: Website enquiry: ${cleanSubject}`,
-            `Content-Type: multipart/alternative; boundary=\"${boundary}\"`,
-            "",
-            `--${boundary}`,
-            'Content-Type: text/plain; charset="UTF-8"',
-            "",
-            textBody,
-            `--${boundary}`,
-            'Content-Type: text/html; charset="UTF-8"',
-            "",
-            htmlBody,
-            `--${boundary}--`,
-            ""
-        ].join("\r\n");
+    const rawEmail = [
+        "MIME-Version: 1.0",
+        `Date: ${sentDate}`,
+        `Message-ID: ${messageId}`,
+        `From: Diggers4U Enquiries <${contactFrom}>`,
+        `To: ${contactTo}`,
+        `Reply-To: ${cleanEmail}`,
+        `Subject: Website enquiry: ${cleanSubject}`,
+        `Content-Type: multipart/alternative; boundary=\"${boundary}\"`,
+        "",
+        `--${boundary}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        "",
+        textBody,
+        `--${boundary}`,
+        'Content-Type: text/html; charset="UTF-8"',
+        "",
+        htmlBody,
+        `--${boundary}--`,
+        "",
+    ].join("\r\n");
 
     const message = new EmailMessage(contactFrom, contactTo, rawEmail);
     try {
@@ -141,11 +140,11 @@ export default {
             return new Response("Method not allowed", {
                 status: 405,
                 headers: {
-                    Allow: "POST"
-                }
+                    Allow: "POST",
+                },
             });
         }
 
         return handleContact(request, env);
-    }
+    },
 };
