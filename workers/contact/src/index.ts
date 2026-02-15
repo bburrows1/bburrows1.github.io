@@ -6,6 +6,7 @@ interface Env {
     };
     CONTACT_FROM: string;
     CONTACT_TO: string;
+    CONTACT_SUCCESS_URL?: string;
 }
 
 function sanitize(value: FormDataEntryValue | null): string {
@@ -25,9 +26,21 @@ function esc(value: string): string {
     });
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-    const contactFrom = (env.CONTACT_FROM ?? "").trim();
-    const contactTo = (env.CONTACT_TO ?? "").trim();
+function getSuccessUrl(request: Request, env: Env): URL {
+    if (env.CONTACT_SUCCESS_URL) {
+        try {
+            return new URL(env.CONTACT_SUCCESS_URL);
+        } catch {
+            // Fall back to the request origin when CONTACT_SUCCESS_URL is invalid.
+        }
+    }
+
+    return new URL("/?contact=sent", request.url);
+}
+
+async function handleContact(request: Request, env: Env): Promise<Response> {
+    const contactFrom = sanitize(env.CONTACT_FROM);
+    const contactTo = sanitize(env.CONTACT_TO);
 
     if (!contactFrom || !contactTo) {
         return new Response("Email configuration missing", { status: 500 });
@@ -71,7 +84,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             `From: Website Contact <${contactFrom}>`,
             `Reply-To: ${cleanEmail}`,
             `Subject: Website enquiry: ${cleanSubject}`,
-            `Content-Type: multipart/alternative; boundary="${boundary}"`,
+            `Content-Type: multipart/alternative; boundary=\"${boundary}\"`,
             "",
             `--${boundary}`,
             'Content-Type: text/plain; charset="UTF-8"',
@@ -88,5 +101,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const message = new EmailMessage(contactFrom, contactTo, rawEmail);
     await env.CONTACT_EMAIL.send(message);
 
-    return Response.redirect(new URL("/?contact=sent", request.url), 303);
+    return Response.redirect(getSuccessUrl(request, env), 303);
+}
+
+export default {
+    async fetch(request: Request, env: Env): Promise<Response> {
+        if (request.method !== "POST") {
+            return new Response("Method not allowed", {
+                status: 405,
+                headers: {
+                    Allow: "POST"
+                }
+            });
+        }
+
+        return handleContact(request, env);
+    }
 };

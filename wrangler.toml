@@ -1,5 +1,2 @@
 name = "diggers4u"
 pages_build_output_dir = "."
-
-[[send_email]]
-name = "CONTACT_EMAIL"

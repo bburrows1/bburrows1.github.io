@@ -1,0 +1,6 @@
+name = "diggers4u-worker"
+main = "src/index.ts"
+compatibility_date = "2026-02-15"
+
+[[send_email]]
+name = "CONTACT_EMAIL"

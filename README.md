@@ -1,8 +1,11 @@
-# Cloudflare Pages Deployment
+# Cloudflare Deployment
 
-This repository is ready to deploy as a static Cloudflare Pages site.
+This repository supports both:
 
-## Cloudflare Pages settings
+- A static Cloudflare Pages site from the repository root.
+- A separate Cloudflare Worker for contact form email in `workers/contact`.
+
+## Pages deploy (static site)
 
 Use these settings when creating the Pages project:
 
@@ -11,25 +14,49 @@ Use these settings when creating the Pages project:
 - Build output directory: `.`
 - Root directory: *(leave empty, so repository root is used)*
 
-## Notes
+Notes:
 
-- `wrangler.toml` sets `pages_build_output_dir = "."` so the root is treated as the publish directory.
-- `_headers` adds basic security headers and cache rules for static assets.
-- `robots.txt` and `sitemap.xml` are served from the site root for SEO.
+- Root `wrangler.toml` is Pages-only (`pages_build_output_dir = "."`).
+- `_headers` adds security headers and cache rules for static assets.
+- `robots.txt` and `sitemap.xml` are served from the site root.
 - `404.html` redirects unknown routes to `/`.
 
-## Contact form email (Cloudflare)
+## Worker deploy (contact form API)
 
-The contact form now posts to `/api/contact` (Cloudflare Pages Function) and sends email using a `send_email` binding named `CONTACT_EMAIL`.
+The Worker code is in `workers/contact/src/index.ts`, with config in `workers/contact/wrangler.toml`.
 
-No email addresses are stored in the repo. Configure them as environment variables in Cloudflare Pages:
+Deploy the Worker from that folder:
 
-- `CONTACT_FROM` (example: `no-reply@yourdomain.com`)
-- `CONTACT_TO` (your inbox destination)
+```bash
+cd workers/contact
+npx wrangler deploy
+```
 
-For local development, put the same keys in `.dev.vars` (ignored by git):
+Set Worker environment variables (Dashboard or CLI):
+
+- `CONTACT_FROM` (for example `no-reply@yourdomain.com`)
+- `CONTACT_TO` (your destination inbox)
+- `CONTACT_SUCCESS_URL` (optional explicit redirect URL after successful submit)
+
+`send_email` binding:
+
+- Binding name: `CONTACT_EMAIL`
+- Configured in `workers/contact/wrangler.toml` (not in root Pages config)
+
+## Routing
+
+The form in `index.html` posts to `/api/contact`.
+Map that path to the Worker with a Worker Route on your zone (for example `yourdomain.com/api/contact`).
+This keeps the form action same-origin while static pages continue to be served by Pages.
+
+## Local Worker dev
+
+Create `workers/contact/.dev.vars` (ignored by git):
 
 ```env
 CONTACT_FROM=no-reply@yourdomain.com
 CONTACT_TO=you@yourdomain.com
+CONTACT_SUCCESS_URL=https://yourdomain.com/?contact=sent
 ```
+
+You can start from `workers/contact/.dev.vars.example`.
