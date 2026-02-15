@@ -17,3 +17,19 @@ Use these settings when creating the Pages project:
 - `_headers` adds basic security headers and cache rules for static assets.
 - `robots.txt` and `sitemap.xml` are served from the site root for SEO.
 - `404.html` redirects unknown routes to `/`.
+
+## Contact form email (Cloudflare)
+
+The contact form now posts to `/api/contact` (Cloudflare Pages Function) and sends email using a `send_email` binding named `CONTACT_EMAIL`.
+
+No email addresses are stored in the repo. Configure them as environment variables in Cloudflare Pages:
+
+- `CONTACT_FROM` (example: `no-reply@yourdomain.com`)
+- `CONTACT_TO` (your inbox destination)
+
+For local development, put the same keys in `.dev.vars` (ignored by git):
+
+```env
+CONTACT_FROM=no-reply@yourdomain.com
+CONTACT_TO=you@yourdomain.com
+```
