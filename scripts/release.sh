@@ -4,12 +4,18 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 PAGES_DIR="$ROOT_DIR/pages/diggers4u"
-WORKER_DIR="$ROOT_DIR/workers/diggers4u-contact"
+PAGES_BUILD_DIR="$ROOT_DIR/dist/diggers4u"
+WORKER_DIR="$ROOT_DIR/workers/diggers4u-worker"
 WORKER_LOCAL_CONFIG="$WORKER_DIR/wrangler.local.toml"
 WORKER_CONFIG="$WORKER_DIR/wrangler.toml"
 
 if ! command -v npx >/dev/null 2>&1; then
   echo "Error: npx is required but was not found." >&2
+  exit 1
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "Error: npm is required but was not found." >&2
   exit 1
 fi
 
@@ -23,8 +29,16 @@ if [ ! -d "$WORKER_DIR" ]; then
   exit 1
 fi
 
-echo "Deploying Pages project from $PAGES_DIR ..."
-npx wrangler pages deploy "$PAGES_DIR"
+echo "Building static site output ..."
+npm run build
+
+if [ ! -d "$PAGES_BUILD_DIR" ]; then
+  echo "Error: build output directory not found: $PAGES_BUILD_DIR" >&2
+  exit 1
+fi
+
+echo "Deploying Pages project from $PAGES_BUILD_DIR ..."
+npx wrangler pages deploy "$PAGES_BUILD_DIR"
 
 if [ -f "$WORKER_LOCAL_CONFIG" ]; then
   echo "Deploying Worker with local config: $WORKER_LOCAL_CONFIG ..."

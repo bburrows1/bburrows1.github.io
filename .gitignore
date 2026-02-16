@@ -1,3 +1,6 @@
 .dev.vars
 .wrangler/
-workers/diggers4u-contact/wrangler.local.toml
+node_modules/
+dist/
+.vite/
+workers/diggers4u-worker/wrangler.local.toml

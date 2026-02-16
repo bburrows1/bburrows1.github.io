@@ -1,0 +1,33 @@
+:root {
+    --font-heading: "Avenir Next", "Trebuchet MS", "Segoe UI Variable", sans-serif;
+    --font-body: "Segoe UI Variable Text", "Gill Sans", "Lucida Sans", sans-serif;
+
+    --color-ink: #182522;
+    --color-ink-soft: #31423f;
+    --color-muted: #5e6f6b;
+    --color-surface: #f5f3ed;
+    --color-surface-raised: #fffdf7;
+    --color-line: #dad3c5;
+
+    --color-brand: #2f6f52;
+    --color-brand-deep: #214c39;
+    --color-accent: #c08a34;
+    --color-danger: #992f2f;
+    --color-info: #1b568d;
+
+    --radius-sm: 0.5rem;
+    --radius-md: 0.9rem;
+    --radius-lg: 1.4rem;
+
+    --shadow-soft: 0 18px 40px rgba(24, 37, 34, 0.12);
+    --shadow-float: 0 24px 50px rgba(24, 37, 34, 0.2);
+
+    --container-max: 72rem;
+    --content-width: min(var(--container-max), 92vw);
+
+    --timing-fast: 140ms;
+    --timing-base: 260ms;
+    --timing-slow: 420ms;
+
+    --nav-height: 4.75rem;
+}

@@ -1,0 +1,23 @@
+{
+  "name": "diggers4u-cloudflare-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Diggers4U Cloudflare Pages + Worker monorepo",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  },
+  "scripts": {
+    "dev": "vite --config vite.config.ts --host 0.0.0.0 --port 5173",
+    "build": "vite build --config vite.config.ts && bash scripts/build-static.sh",
+    "preview": "vite preview --config vite.config.ts --host 0.0.0.0 --port 8788",
+    "typecheck": "tsc --noEmit",
+    "deploy:pages": "npx wrangler pages deploy dist/diggers4u",
+    "deploy:worker": "npx wrangler deploy --cwd workers/diggers4u-worker",
+    "release": "bash scripts/release.sh",
+    "check:scripts": "bash -n scripts/release.sh && bash -n scripts/build-static.sh"
+  }
+}

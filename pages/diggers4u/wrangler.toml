@@ -1,2 +1,2 @@
 name = "diggers4u"
-pages_build_output_dir = "."
+pages_build_output_dir = "../../dist/diggers4u"
