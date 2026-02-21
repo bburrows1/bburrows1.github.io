@@ -1,25 +1,27 @@
 # Cloudflare Monorepo
 
-This repository is structured as a Cloudflare monorepo with one Pages app and one Worker:
+This repository contains:
 
-- `pages/diggers4u`: static Cloudflare Pages site
-- `workers/diggers4u-contact`: contact form Worker (`/api/contact`)
+- `pages/diggers4u`: existing static Cloudflare Pages site.
+- `pages/luscombefarm`: new single-page Vite + Cloudflare Pages site.
+- `workers/diggers4u-worker`: existing Worker used for enquiry email handling.
 
 ## Repository layout
 
 ```text
 pages/
   diggers4u/
+  luscombefarm/
+    package.json
+    vite.config.js
     wrangler.toml
     index.html
-    404.html
-    _headers
-    style.css
-    robots.txt
-    sitemap.xml
-    resources/
+    public/404.html
+    src/
+      main.js
+      styles.css
 workers/
-  diggers4u-contact/
+  diggers4u-worker/
     wrangler.toml
     src/index.ts
 scripts/
@@ -27,65 +29,53 @@ scripts/
 Makefile
 ```
 
-## Pages deploy (`pages/diggers4u`)
+## Luscombe Farm local development (`pages/luscombefarm`)
+
+```bash
+cd pages/luscombefarm
+npm install
+npm run dev
+```
+
+Additional scripts:
+
+- `npm run build`: builds to `dist/`
+- `npm run preview`: previews the production build locally
+- `npm run deploy`: deploys `dist/` to Cloudflare Pages project `luscombefarm`
+- `npm run format`: formats HTML/CSS/JS/JSON files
+- `npm run format:check`: verifies formatting
+
+## Luscombe Farm Cloudflare Pages settings
 
 Use these settings when creating the Pages project:
 
-- Framework preset: `None`
-- Build command: _(leave empty)_
-- Build output directory: `.`
-- Root directory: `pages/diggers4u`
+- Root directory: `pages/luscombefarm`
+- Build command: `npm run build`
+- Build output directory: `dist`
 
-Or deploy with Wrangler from the site folder:
+## Future worker routing for Luscombe Farm
 
-```bash
-npx wrangler pages deploy pages/diggers4u
-```
+The form in `pages/luscombefarm/index.html` posts to:
 
-Notes:
+- `POST /api/contact`
 
-- `pages/diggers4u/wrangler.toml` is Pages-only (`pages_build_output_dir = "."`).
-- `pages/diggers4u/_headers` adds security headers and cache rules for static assets.
-- `pages/diggers4u/robots.txt` and `pages/diggers4u/sitemap.xml` are served from the site root.
-- `pages/diggers4u/404.html` redirects unknown routes to `/`.
+Current form field names (worker contract):
 
-## Worker deploy (`workers/diggers4u-contact`)
+- `Name`
+- `Email`
+- `Phone Number`
+- `Subject`
+- `Comment`
+- `Company` (honeypot)
 
-Worker code is in `workers/diggers4u-contact/src/index.ts` with config in `workers/diggers4u-contact/wrangler.toml`.
+For production routing, map `<your-domain>/api/contact` to the existing Worker in `workers/diggers4u-worker`.
+No worker code changes are included in the Luscombe Farm site scaffold.
 
-Deploy:
+## Existing diggers4u site
 
-```bash
-npx wrangler deploy --cwd workers/diggers4u-contact
-```
+`pages/diggers4u` remains unchanged and deploys as a static Pages site.
 
-Set Worker environment variables (Dashboard or CLI):
+## Make targets
 
-- `CONTACT_FROM` (for example `no-reply@yourdomain.com`)
-- `CONTACT_TO` (your destination inbox)
-- `CONTACT_SUCCESS_URL` (optional explicit redirect URL after successful submit)
-
-`send_email` binding:
-
-- Binding name: `CONTACT_EMAIL`
-- Configured in `workers/diggers4u-contact/wrangler.toml`
-
-## Routing
-
-`pages/diggers4u/index.html` posts to `/api/contact`.
-
-Map `yourdomain.com/api/contact` to the contact Worker route so Pages serves static content and the Worker handles form submissions.
-
-## One-command release
-
-Run:
-
-```bash
-make release
-```
-
-This command:
-
-- Deploys Pages from `pages/diggers4u`
-- Deploys Worker from `workers/diggers4u-contact`
-- Uses `workers/diggers4u-contact/wrangler.local.toml` if present, otherwise falls back to `workers/diggers4u-contact/wrangler.toml`
+- `make release`: runs the existing `scripts/release.sh` workflow.
+- `make deploy-luscombefarm`: deploys the new Luscombe Farm Pages project.

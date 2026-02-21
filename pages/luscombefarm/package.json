@@ -1,0 +1,19 @@
+{
+  "name": "luscombefarm-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "wrangler pages deploy dist --project-name luscombefarm",
+    "format": "prettier --write \"index.html\" \"src/**/*.{css,js}\" \"public/**/*.html\" \"*.json\"",
+    "format:check": "prettier --check \"index.html\" \"src/**/*.{css,js}\" \"public/**/*.html\" \"*.json\""
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "vite": "^6.0.0",
+    "wrangler": "^4.0.0"
+  }
+}
