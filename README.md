@@ -2,8 +2,8 @@
 
 This repository contains:
 
-- `pages/diggers4u`: existing static Cloudflare Pages site.
-- `pages/luscombefarm`: new single-page Vite + Cloudflare Pages site.
+- `pages/diggers4u`: static Cloudflare Pages site for DIGGERS4U.
+- `pages/luscombefarm`: single-page Vite + Cloudflare Pages site for Luscombe Farm Storage.
 - `workers/diggers4u-worker`: existing Worker used for enquiry email handling.
 
 ## Repository layout
@@ -16,7 +16,10 @@ pages/
     vite.config.js
     wrangler.toml
     index.html
+    public/_headers
     public/404.html
+    public/robots.txt
+    public/sitemap.xml
     src/
       main.js
       styles.css
@@ -53,27 +56,23 @@ Use these settings when creating the Pages project:
 - Build command: `npm run build`
 - Build output directory: `dist`
 
-## Future worker routing for Luscombe Farm
+Canonical production URL: `https://www.luscombefarm.co.uk/`
 
-The form in `pages/luscombefarm/index.html` posts to:
+Luscombe SEO files:
 
-- `POST /api/contact`
+- `public/robots.txt`
+- `public/sitemap.xml`
+- `public/_headers` (includes `X-Robots-Tag: noindex, nofollow` for `luscombefarm.pages.dev`)
 
-Current form field names (worker contract):
+## Worker routing note for Luscombe Farm
 
-- `Name`
-- `Email`
-- `Phone Number`
-- `Subject`
-- `Comment`
-- `Company` (honeypot)
-
-For production routing, map `<your-domain>/api/contact` to the existing Worker in `workers/diggers4u-worker`.
-No worker code changes are included in the Luscombe Farm site scaffold.
+The existing `workers/diggers4u-worker` can still be mapped to `/api/contact` in future if a Luscombe contact form is added.
 
 ## Existing diggers4u site
 
-`pages/diggers4u` remains unchanged and deploys as a static Pages site.
+`pages/diggers4u` deploys as a static Pages site.
+
+Canonical production URL: `https://www.diggers4u.co.uk/`
 
 ## Make targets
 
